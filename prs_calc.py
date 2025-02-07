@@ -44,28 +44,34 @@ class PRSApp(QWidget):
         except Exception as e:
             print(f"Error loading GWAS data: {e}")
 
-    def load_snp_file(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Select SNP List", "", "Excel Files (*.xlsx *.xls)")
-        if file_path:
-            self.snp_label.setText(f"SNP List: {file_path}")
+   def load_snp_file(self):
+    file_path, _ = QFileDialog.getOpenFileName(self, "Select SNP List", "", "Excel Files (*.xlsx *.xls)")
+    if file_path:
+        self.snp_label.setText(f"SNP List: {file_path}")
+        try:
             df = pd.read_excel(file_path)
             self.snp_data = df.to_dict(orient='records')
+            print("SNP data loaded successfully.")
+        except Exception as e:
+            print(f"Error reading SNP file: {e}")
+            self.snp_label.setText("Error loading SNP file.")
 
-    def calculate_prs(self):
-        if self.snp_data:
-            prs_score = 0
-            for snp in self.snp_data:
-                rsid = snp.get('rsID')
-                genotype = snp.get('Genotype')
-                if rsid in self.gwas_data and genotype is not None:
-                    prs_score += genotype * self.gwas_data[rsid]
-
-            interpretation = self.interpret_prs(prs_score)
-
-            result_text = f"PRS Score: {prs_score:.4f}\n\n{interpretation}"
-            self.result_text.setText(result_text)
-        else:
-            self.result_text.setText("Please load your SNP file.")
+def calculate_prs(self):
+    if self.snp_data:
+        prs_score = 0
+        for snp in self.snp_data:
+            rsid = snp.get('rsID')
+            genotype = snp.get('Genotype')
+            if rsid in self.gwas_data and genotype is not None:
+                try:
+                    prs_score += float(genotype) * self.gwas_data[rsid]
+                except ValueError as e:
+                    print(f"Error in genotype value for {rsid}: {e}")
+        interpretation = self.interpret_prs(prs_score)
+        result_text = f"PRS Score: {prs_score:.4f}\n\n{interpretation}"
+        self.result_text.setText(result_text)
+    else:
+        self.result_text.setText("Please load your SNP file.")
 
     def interpret_prs(self, score):
         if score < -1:
